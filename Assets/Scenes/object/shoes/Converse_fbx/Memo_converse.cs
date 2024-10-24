@@ -1,0 +1,1 @@
+//https://www.turbosquid.com/ja/3d-models/sneakers-3d-model/527642
