@@ -23,8 +23,8 @@ public class HeadRemapping : MonoBehaviour
 
     void Update()
     {
-        // スペースキーでリマッピングを開始する
-        if (Input.GetKeyDown(KeyCode.Space))  
+        // リマッピングが進行中でなければ新たなリマッピングを開始する
+        if (!isRemapping && Input.GetKeyDown(KeyCode.Space))  
         {
             t0 = Time.time;  // 開始時間をリセット
             isRemapping = true;  // リマッピング開始

@@ -4,10 +4,11 @@ public class StepUpAlternating : MonoBehaviour
 {
     public Transform rightShoe;  // 右靴のTransform
     public Transform leftShoe;   // 左靴のTransform
-    public float stepHeight = 0.2f;  // 階段の高さ
-    public float stepDepth = 0.4f;   // 階段の幅
-    public float stepSpeed = 1.0f;   // 階段を登る速度
+    public float stepHeight = 0.18f;  // 階段の高さ
+    public float stepDepth = 0.29f;   // 階段の幅
+    public float stepDuration = 0.8f;  // 各ステップにかける時間（秒）
     public float curveStrength = 1.0f;  // 曲線のカーブの強さを調整する係数
+    public float transitionStiffness = 10.0f; // シグモイド関数の硬さ
 
     private bool isStepping = false; // 階段を登っている最中かどうか
     private bool isRightShoeTurn = true; // どちらの靴が次に動くかのフラグ
@@ -39,17 +40,21 @@ public class StepUpAlternating : MonoBehaviour
             }
         }
 
-        // 曲線移動を行う
+        // シグモイド曲線で移動を行う
         if (isStepping)
         {
-            progress += stepSpeed * Time.deltaTime;
+            // 進行状況を時間で制御する
+            progress += Time.deltaTime / stepDuration;
             progress = Mathf.Clamp01(progress); // 進行状況が0〜1の範囲内になるようにする
 
+            // シグモイド関数で進行度を滑らかに変化させる
+            float sigmoidProgress = 1 / (1 + Mathf.Exp(-transitionStiffness * (progress - 0.5f)));
+
             // 現在の進行に基づいてLerpで移動位置を計算
-            Vector3 currentPosition = Vector3.Lerp(startPosition, targetPosition, progress);
+            Vector3 currentPosition = Vector3.Lerp(startPosition, targetPosition, sigmoidProgress);
 
             // 曲線を描くようにy軸を持ち上げる
-            currentPosition.y += Mathf.Sin(progress * Mathf.PI) * stepHeight * curveStrength;
+            currentPosition.y += Mathf.Sin(sigmoidProgress * Mathf.PI) * stepHeight * curveStrength;
 
             if (isRightShoeTurn)
             {
