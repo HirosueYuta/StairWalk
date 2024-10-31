@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class HeadMove : MonoBehaviour
+public class HeadMoveAlternating : MonoBehaviour
 {
     public Transform headTransform;  // HMDのトランスフォーム
     public float stairRise = 0.12f;  // 各階段ステップの上昇量
