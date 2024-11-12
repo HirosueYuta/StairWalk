@@ -1,5 +1,6 @@
 using UnityEngine;
-
+using Valve.VR;
+using System;
 public class UpController : MonoBehaviour
 {
     public Transform rightShoe;  // 右靴のTransformを指定
@@ -31,18 +32,39 @@ public class UpController : MonoBehaviour
         currentHeadHeight = headTransform.position.y;
         currentZPosition = headTransform.position.z;
     }
+    
+    //GrabGripボタン（初期設定は側面ボタン）が押されてるのかを判定するためのGrabという関数にSteamVR_Actions.default_GrabGripを固定
+    private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip;
+    //結果の格納用Boolean型関数grapgrip
+    private Boolean grapgrip;  
+    private Boolean grapgripLeftHand;
+    private Boolean grapgripRightHand;
 
     void Update()
     {
+        //結果をGetStateで取得してgrapgripに格納
+        //SteamVR_Input_Sources.機器名（今回は左コントローラ）
+        grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
+        grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
+        //GrabGripが押されているときにコンソールにGrabGripと表示
+        if (grapgripLeftHand)
+        {
+            Debug.Log("GrabGripLeftHand");
+        }
+        if (grapgripRightHand)
+        {
+            Debug.Log("GrabGripRightHand");
+        }
+
         // 各ボタンが押されたときにステップを開始
         if (!isStepping && !isRemapping)
         {
-            if (isRightShoeTurn && Input.GetKeyDown(KeyCode.JoystickButton1))  // Aボタン（右）device.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)
+            if (isRightShoeTurn && grapgripRightHand)  // Aボタン（右）
             {
                 StartStep();
                 StartHeadRemap();
             }
-            else if (!isRightShoeTurn && Input.GetKeyDown(KeyCode.JoystickButton2))  // Xボタン（左）
+            else if (!isRightShoeTurn && grapgripLeftHand)  // Xボタン（左）
             {
                 StartStep();
                 StartHeadRemap();
