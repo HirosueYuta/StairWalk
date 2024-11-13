@@ -16,6 +16,7 @@ public class StepUpAlternating : MonoBehaviour
     private float progress = 0.0f;  // 移動の進行状況を管理
     private Vector3 startPosition;  // 移動の開始位置
     private Vector3 targetPosition; // 移動の目標位置
+    
 
     void Update()
     {
