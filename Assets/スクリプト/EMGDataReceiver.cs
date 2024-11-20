@@ -106,16 +106,36 @@ public class EMGDataReceiver : MonoBehaviour
 
     void OnDestroy()
     {
-        // スレッド終了指示
+        Debug.Log("Shutting down UDP receiver...");
+
+        // スレッドの停止フラグを設定
         isRunning = false;
 
-        // スレッドが終了するのを待つ
-        if (receiveThread != null && receiveThread.IsAlive)
+        // UDPクライアントを閉じる
+        if (udpClient != null)
         {
-            receiveThread.Join();
+            udpClient.Close();
+            udpClient = null;
         }
 
-        // ソケットを閉じる
-        udpClient?.Close();
+        // スレッドがまだ生きている場合は終了を待つ
+        if (receiveThread != null && receiveThread.IsAlive)
+        {
+            try
+            {
+                receiveThread.Join(1000); // 最大1秒間待機
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error while stopping thread: " + e.Message);
+            }
+            finally
+            {
+                receiveThread = null; // 確実に参照をクリア
+            }
+        }
+
+        Debug.Log("UDP receiver stopped.");
     }
+
 }

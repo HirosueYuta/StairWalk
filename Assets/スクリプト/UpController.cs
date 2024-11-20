@@ -61,12 +61,12 @@ public class UpController : MonoBehaviour
             {
                 if (isRightShoeTurn && grapgripRightHand)
                 {
-                    bufferedRightHand = true;
+                    bufferedLeftHand = true;
                     isInputBuffered = true;
                 }
                 else if (!isRightShoeTurn && grapgripLeftHand)
                 {
-                    bufferedLeftHand = true;
+                    bufferedRightHand = true;
                     isInputBuffered = true;
                 }
             }
@@ -76,6 +76,7 @@ public class UpController : MonoBehaviour
         if (!isStepping && !isRemapping && isInputBuffered)
         {
             isInputBuffered = false; // バッファをクリア
+            
             if (bufferedRightHand && isRightShoeTurn)
             {
                 StartStep();
