@@ -7,6 +7,7 @@ public class BPMPlayer : MonoBehaviour
 
     private float interval;         // ビート間隔
     private float timer = 0f;       // タイマー
+    private int count = 0;
 
     void Start()
     {
@@ -23,6 +24,8 @@ public class BPMPlayer : MonoBehaviour
         if (timer >= interval)
         {
             audioSource.Play(); // 音を再生
+            count++;
+            Debug.Log("click"+count+"回目");
             timer -= interval; // タイマーをリセット
         }
     }
