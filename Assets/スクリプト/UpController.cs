@@ -23,7 +23,10 @@ public class UpController : MonoBehaviour
     private bool grapgripRightHand;
 
     private bool isStepping = false;    // ステップ中かどうか
-    private bool isRightShoeTurn = true;
+    [SerializeField]
+    private bool isRightShoeTurn = false;
+    [SerializeField]
+    private bool isLeftShoeTurn = false;
     private bool isFirstStep = true;
     private float progress = 0.0f;
     private Vector3 startPosition;
@@ -43,6 +46,9 @@ public class UpController : MonoBehaviour
     {
         currentHeadHeight = headTransform.position.y;
         currentZPosition = headTransform.position.z;
+
+        isRightShoeTurn = false;
+        isLeftShoeTurn = false;
     }
 
     void Update()
@@ -51,68 +57,91 @@ public class UpController : MonoBehaviour
         grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
         grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
 
-        // ステップ中の処理
-        if (isStepping)
+        if(grapgripRightHand)
         {
+            isRightShoeTurn = true;
+            StartStep();
+        }
+
+        if(grapgripLeftHand)
+        {
+            isLeftShoeTurn = true;
+            StartStep();
+        }
+
+        if(isStepping){
             MoveShoe();
-
-            // ステップ中の入力をバッファ
-            if (progress >= bufferTimeThreshold)
-            {
-                if (isRightShoeTurn && grapgripRightHand)
-                {
-                    bufferedLeftHand = true;
-                    isInputBuffered = true;
-                }
-                else if (!isRightShoeTurn && grapgripLeftHand)
-                {
-                    bufferedRightHand = true;
-                    isInputBuffered = true;
-                }
-            }
+            ///終わったらMoveShoe内で
+            ///isrightshoueturn = false or isleftshoueturn = false
+            ///isStepping = false;
         }
 
-        // ステップ終了後にバッファされた入力を処理
-        if (!isStepping && !isRemapping && isInputBuffered)
-        {
-            isInputBuffered = false; // バッファをクリア
-            
-            if (bufferedRightHand && isRightShoeTurn)
-            {
-                StartStep();
-                StartHeadRemap();
-            }
-            else if (bufferedLeftHand && !isRightShoeTurn)
-            {
-                StartStep();
-                StartHeadRemap();
-            }
-
-            // バッファ状態をリセット
-            bufferedRightHand = false;
-            bufferedLeftHand = false;
-        }
-
-        // 通常の入力処理
-        if (!isStepping && !isRemapping)
-        {
-            if (isRightShoeTurn && grapgripRightHand)
-            {
-                StartStep();
-                StartHeadRemap();
-            }
-            else if (!isRightShoeTurn && grapgripLeftHand)
-            {
-                StartStep();
-                StartHeadRemap();
-            }
-        }
-
-        // リマッピング処理
-        if (isRemapping)
-        {
+        if (isRemapping){
             RemapHeadHeight();
         }
+
+        // // ステップ中の処理
+        // if (isStepping)
+        // {
+        //     MoveShoe();
+
+        //     // ステップ中の入力をバッファ
+        //     if (progress >= bufferTimeThreshold)
+        //     {
+        //         if (isRightShoeTurn && grapgripLeftHand )
+        //         {
+        //             bufferedLeftHand = true;
+        //             isInputBuffered = true;
+        //         }
+        //         else if (!isRightShoeTurn && grapgripRightHand)
+        //         {
+        //             bufferedRightHand = true;
+        //             isInputBuffered = true;
+        //         }
+        //     }
+        // }
+
+        // // ステップ終了後にバッファされた入力を処理
+        // if (!isStepping && !isRemapping && isInputBuffered)
+        // {
+        //     isInputBuffered = false; // バッファをクリア
+            
+        //     if (bufferedRightHand && isRightShoeTurn)
+        //     {
+        //         StartStep();
+        //         StartHeadRemap();
+        //     }
+        //     else if (bufferedLeftHand && !isRightShoeTurn)
+        //     {
+        //         StartStep();
+        //         StartHeadRemap();
+        //     }
+
+        //     // バッファ状態をリセット
+        //     bufferedRightHand = false;
+        //     bufferedLeftHand = false;
+        // }
+
+        // // 通常の入力処理
+        // if (!isStepping && !isRemapping)
+        // {
+        //     if (isRightShoeTurn && grapgripRightHand)
+        //     {
+        //         StartStep();
+        //         StartHeadRemap();
+        //     }
+        //     else if (!isRightShoeTurn && grapgripLeftHand)
+        //     {
+        //         StartStep();
+        //         StartHeadRemap();
+        //     }
+        // }
+
+        // // リマッピング処理
+        // if (isRemapping)
+        // {
+        //     RemapHeadHeight();
+        // }
     }
 
     void StartStep()
@@ -128,11 +157,14 @@ public class UpController : MonoBehaviour
             startPosition = rightShoe.position;
             targetPosition = rightShoe.position + new Vector3(0, stepHeight * heightMultiplier, stepDepth * depthMultiplier);
         }
-        else
+        else if (isLeftShoeTurn)
         {
             startPosition = leftShoe.position;
             targetPosition = leftShoe.position + new Vector3(0, stepHeight * heightMultiplier, stepDepth * depthMultiplier);
         }
+        
+        // 頭部リマッピングを開始
+        StartHeadRemap();
     }
 
     void MoveShoe()
@@ -148,7 +180,7 @@ public class UpController : MonoBehaviour
         {
             rightShoe.position = currentPosition;
         }
-        else
+        else if (isLeftShoeTurn)
         {
             leftShoe.position = currentPosition;
         }
@@ -156,7 +188,18 @@ public class UpController : MonoBehaviour
         if (progress >= 1.0f)
         {
             isStepping = false;
-            isRightShoeTurn = !isRightShoeTurn;
+
+            //ステップ完了後にターンをリセット
+            if (isRightShoeTurn)
+            {
+                isRightShoeTurn = false;
+                Debug.Log("右足のステップが完了しました");
+            }
+            else if (isLeftShoeTurn)
+            {
+                isLeftShoeTurn = false;
+                Debug.Log("左足のステップが完了しました");
+            }
             isFirstStep = false;
         }
     }

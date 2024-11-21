@@ -23,6 +23,7 @@ public class BPMPlayer : MonoBehaviour
         // ビート間隔を超えた場合に音を再生
         if (timer >= interval)
         {
+            audioSource.Stop(); // 再生を停止（これで位置がリセットされる）
             audioSource.Play(); // 音を再生
             count++;
             Debug.Log("click"+count+"回目");
