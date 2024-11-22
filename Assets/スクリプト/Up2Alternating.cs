@@ -46,6 +46,10 @@ public class Up2Alternating : MonoBehaviour
     {
         currentHeadHeight = headTransform.position.y;
         currentZPosition = headTransform.position.z;
+
+        isLeftShoeTurn = false;
+        isRightShoeTurn = false;
+        isRightFootNext = true;
     }
 
     void Update()
@@ -54,21 +58,10 @@ public class Up2Alternating : MonoBehaviour
         grapgripLeftHand = Input.GetKeyDown(KeyCode.A);
         grapgripRightHand = Input.GetKeyDown(KeyCode.D);
 
-        // ステップ中の入力をバッファに保存
-        if (isStepping)
+        //バッファ入力がないとき
+        if (!isStepping)
         {
-            if (grapgripRightHand && !isRightFootNext)
-            {
-                bufferedRightInput = true;
-            }
-            else if (grapgripLeftHand && isRightFootNext)
-            {
-                bufferedLeftInput = true;
-            }
-        }
-        else
-        {
-            // バッファが空なら通常の入力を処理
+            // 通常の入力を処理
             if (grapgripRightHand && isRightFootNext)
             {
                 isRightShoeTurn = true;
@@ -80,6 +73,18 @@ public class Up2Alternating : MonoBehaviour
                 isLeftShoeTurn = true;
                 StartStep();
                 StartHeadRemap();
+            }
+        }
+        // ステップ中の入力をバッファに保存
+        else
+        {
+            if (grapgripRightHand && !isRightFootNext)
+            {
+                bufferedRightInput = true;
+            }
+            else if (grapgripLeftHand && isRightFootNext)
+            {
+                bufferedLeftInput = true;
             }
         }
 
@@ -143,12 +148,10 @@ public class Up2Alternating : MonoBehaviour
             if (isRightShoeTurn)
             {
                 isRightShoeTurn = false;
-                Debug.Log("右足のステップが完了しました");
             }
             else if (isLeftShoeTurn)
             {
                 isLeftShoeTurn = false;
-                Debug.Log("左足のステップが完了しました");
             }
 
             isFirstStep = false;

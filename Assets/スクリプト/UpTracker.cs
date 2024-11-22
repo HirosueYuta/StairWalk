@@ -24,18 +24,36 @@ public class UpTracker : MonoBehaviour
     private float currentZPosition;               // 現在の頭部Z位置
 
     // トラッカーの高さ関連
-    public float visualGain = 1.193f;            // 視覚的ゲイン
+    //public float visualGain = 1.193f;            // 視覚的ゲイン
     private float initialHeightLeftTracker;      // 左トラッカーの初期高さ
     private float initialHeightRightTracker;     // 右トラッカーの初期高さ
-    private float RelativeHeightRightTracker;
-    private float RelativeHeightLeftTracker;
+    private float RelativeHeightRightTracker;    //右トラッカーの相対高さ
+    private float RelativeHeightLeftTracker;     //左トラッカの相対高さ
+    private float previousRelativeHeightRightTracker;    //前フレームの右トラッカーの相対高さ
+    private float previousRelativeHeightLeftTracker;     //左トラッカの相対高さ
+    [SerializeField]
+    private bool isLeftFootUp = false;// 左足が上方向に移動しているかどうかを示すフラグ
+    [SerializeField]
+    private bool isRightFootUp = false;// 右足が上方向に移動しているかどうかを示すフラグ
+     // しきい値（ノイズ除去用）
+    public float upwardThreshold = 0.03f; // この値以上の高さ変化があれば移動とみなす
+    [SerializeField]
     private bool canTriggerLeft = true;          // 左足のトリガー許可
+    [SerializeField]
     private bool canTriggerRight = true;         // 右足のトリガー許可
     private bool isInitialHeightSet = false;     //トラッカーの初期高さ設定をしたかどうか
 
     // ステップ状態とフラグ
     private bool isStepping = false;             // ステップ中かどうか
-    private bool isRightShoeTurn = true;         // 現在右靴の番かどうか
+
+    [SerializeField]
+    public bool isRightFootNext = true;
+
+    [SerializeField]
+    private bool isRightShoeTurn = false;
+
+    [SerializeField]
+    private bool isLeftShoeTurn = false;   
     private bool isFirstStep = true;             // 最初のステップかどうか
     private float progress = 0.0f;               // ステップの進行状況
     private Vector3 startPosition;               // ステップ開始位置
@@ -44,11 +62,19 @@ public class UpTracker : MonoBehaviour
     private bool isRemapping = false;            // リマッピング中かどうか
     private float omega = 1f;                    // リマッピングの調整用係数
 
+    // 入力バッファ
+    private bool bufferedLeftInput = false;
+    private bool bufferedRightInput = false;
+
     void Start()
     {
         // 頭部の初期位置（高さとZ軸）を記録
         currentHeadHeight = headTransform.position.y;
         currentZPosition = headTransform.position.z;
+
+        isLeftShoeTurn = false;
+        isRightShoeTurn = false;
+        isRightFootNext = true;
     }
 
     void Update()
@@ -56,65 +82,96 @@ public class UpTracker : MonoBehaviour
         // 初期高さが未設定の場合のみ初期高さを取得
         if (!isInitialHeightSet || initialHeightLeftTracker == 0 || initialHeightRightTracker == 0)
         {
+            //頭の初期位置
             initialHeadHeight = headTransform.position.y; //＊＊頭の初期位置は必ず０である
+            //各足のトラッカの初期位置
             initialHeightLeftTracker = leftTracker.position.y;
             initialHeightRightTracker = rightTracker.position.y;
+            //初期化として前フレームの高さを現在の高さで設定
+            previousRelativeHeightLeftTracker = leftTracker.position.y;
+            previousRelativeHeightRightTracker = rightTracker.position.y;
+
             isInitialHeightSet = true; // 初期高さの取得を完了
             //print("initialHeight:(" + initialHeadHeight+ "," + initialHeightLeftTracker + "," + initialHeightRightTracker + ")");
         }
 
-        
-        // ステップまたはリマッピングが進行中でない場合のみ,トラッカーの初期位置を設定した後の場合のみ遷移のチェック
-        if (!isStepping && !isRemapping && isInitialHeightSet)
+        //初期高さの設定が終わった後
+        if (isInitialHeightSet)
         {
+            //トラッカーの入力を取得
             // トラッカーの高さを相対的に計算
-            RelativeHeightRightTracker = rightTracker.position.y - (currentHeadHeight - initialHeadHeight);
             RelativeHeightLeftTracker = leftTracker.position.y - (currentHeadHeight - initialHeadHeight);
-            //print("Relative Height Tracker: (" + RelativeHeightLeftTracker + "," + RelativeHeightRightTracker + ")");
-            //print("initialHeightRightTracker + stepHeight / visualGain:"+(initialHeightRightTracker+stepHeight/visualGain));
-        
-            // トラッカーの高さがしきい値を超えた場合、ステップと頭部リマッピングを開始
-            if (isRightShoeTurn && canTriggerRight && RelativeHeightRightTracker >= (initialHeightRightTracker + stepHeight / visualGain))
-            {
-                StartStep();
-                StartHeadRemap();
-                canTriggerRight = false; // 右足トリガーを無効化
-                //print("canTriggerRight:"+canTriggerRight);
-            }
-            else if (!isRightShoeTurn && canTriggerLeft && RelativeHeightLeftTracker >= (initialHeightLeftTracker + stepHeight / visualGain))
-            {
-                StartStep();
-                StartHeadRemap();
-                canTriggerLeft = false; // 左足トリガーを無効化
-                //print("canTriggerLeft:"+canTriggerLeft);
-            }
-        }
+            RelativeHeightRightTracker = rightTracker.position.y - (currentHeadHeight - initialHeadHeight);
+            //Debug.Log("Relative Height Tracker: (" + RelativeHeightLeftTracker + "," + RelativeHeightRightTracker + ")");
+            //Debug.Log("initialHeightRightTracker + stepHeight / visualGain:"+(initialHeightRightTracker+stepHeight/visualGain));
 
-        // トリガーリセットの条件を満たす場合、再び遷移を許可
-        if (!isStepping)
-        {
-            if (RelativeHeightLeftTracker <= initialHeightLeftTracker + 0.2f)
+            //足が初期値+20cm以内にいるかどうか
+            if (RelativeHeightLeftTracker <= initialHeightLeftTracker + 0.5f)
             {
                 canTriggerLeft = true;
-                //print("canTriggerLeft:"+canTriggerLeft);
+                //Debug.Log("canTriggerLeft:"+canTriggerLeft);
+            }else{
+                canTriggerLeft = true;
             }
-            if (RelativeHeightRightTracker <= initialHeightRightTracker + 0.2f)
+            if (RelativeHeightRightTracker <= initialHeightRightTracker + 0.5f)
             {
                 canTriggerRight = true;
-                //print("canTriggerRight:"+canTriggerRight);
+                //Debug.Log("canTriggerRight:"+canTriggerRight);
+            }else{
+                canTriggerRight = true;
             }
-        }
+            //上方向に動いているかを判定
+            isLeftFootUp = (RelativeHeightLeftTracker - previousRelativeHeightLeftTracker) > upwardThreshold;
+            isRightFootUp = (RelativeHeightRightTracker - previousRelativeHeightRightTracker) > upwardThreshold;
+            
 
-        // ステップが進行中の場合、靴の位置を更新
-        if (isStepping)
-        {
-            MoveShoe();
-        }
 
-        // リマッピングが進行中の場合、頭部位置のリマッピングを実行
-        if (isRemapping)
-        {
-            RemapHeadHeight();
+            //バッファ入力がないとき
+            if (!isStepping){
+                //通常の入力を処理
+                if (isLeftFootUp && canTriggerLeft && !isRightFootNext)
+                {
+                    isLeftShoeTurn = true;
+                    StartStep();
+                    Debug.Log("Left Foot Start");
+                    StartHeadRemap();
+                }
+                else if (isRightFootUp && canTriggerRight && isRightShoeTurn)
+                {
+                    isRightShoeTurn = true;
+                    StartStep();
+                    Debug.Log("Roight Foot Start");
+                    StartHeadRemap();
+                }
+            }
+            // ステップ中の入力をバッファに保存
+            else
+            {
+                if ( isLeftFootUp && canTriggerLeft && isRightFootNext)
+                {
+                    bufferedLeftInput = true;
+                }
+                else if (isLeftFootUp && canTriggerLeft && !isRightFootNext)
+                {
+                    bufferedRightInput = true;
+                }
+            }
+
+            // ステップ処理
+            if (isStepping)
+            {
+                MoveShoe();
+            }
+
+            // 頭部リマッピング
+            if (isRemapping)
+            {
+                RemapHeadHeight();
+            }
+
+            //最後に現在の高さを次フレーム用に保存
+            previousRelativeHeightLeftTracker = RelativeHeightLeftTracker;
+            previousRelativeHeightRightTracker = RelativeHeightRightTracker;
         }
     }
 
@@ -144,33 +201,67 @@ public class UpTracker : MonoBehaviour
     // 靴の移動処理
     void MoveShoe()
     {
-        // 進行度を更新し、0～1の範囲に制限
         progress += Time.deltaTime / stepDuration;
         progress = Mathf.Clamp01(progress);
 
-        // シグモイド関数で滑らかな進行度を計算
         float sigmoidProgress = 1 / (1 + Mathf.Exp(-transitionStiffnessShoe * (progress - 0.5f)));
-
-        // 線形補間で靴の位置を更新し、y軸の高さを調整
         Vector3 currentPosition = Vector3.Lerp(startPosition, targetPosition, sigmoidProgress);
         currentPosition.y += Mathf.Sin(sigmoidProgress * Mathf.PI) * stepHeight * curveStrength;
 
-        // 右靴または左靴の位置を更新
         if (isRightShoeTurn)
         {
             rightShoe.position = currentPosition;
         }
-        else
+        else if (isLeftShoeTurn)
         {
             leftShoe.position = currentPosition;
         }
 
-        // ステップ完了時の処理
         if (progress >= 1.0f)
         {
-            isStepping = false;            // ステップ終了
-            isRightShoeTurn = !isRightShoeTurn; // 次の靴に切り替え
-            isFirstStep = false;           // 最初のステップフラグ解除
+            isStepping = false;
+            isRightFootNext = !isRightFootNext;
+
+            // ステップ完了後にターンをリセット
+            if (isRightShoeTurn)
+            {
+                isRightShoeTurn = false;
+            }
+            else if (isLeftShoeTurn)
+            {
+                isLeftShoeTurn = false;
+            }
+
+            isFirstStep = false;
+
+            // バッファ処理
+            ProcessBufferedInput();
+        }
+    }
+
+    void ProcessBufferedInput()
+    {
+        if (bufferedRightInput && isRightFootNext)
+        {
+            bufferedRightInput = false;
+            isRightShoeTurn = true;
+            
+            // 頭部リマッピングを再リセットして再開
+            ResetHeadRemap();
+
+            StartStep();
+            StartHeadRemap();
+        }
+        else if (bufferedLeftInput && !isRightFootNext)
+        {
+            bufferedLeftInput = false;
+            isLeftShoeTurn = true;
+
+            // 頭部リマッピングを再リセットして再開
+            ResetHeadRemap();
+
+            StartStep();
+            StartHeadRemap();
         }
     }
 
@@ -179,6 +270,10 @@ public class UpTracker : MonoBehaviour
     {
         if (!isRemapping)
         {
+            // 頭部の現在位置をリマッピングの基準として保存
+            currentHeadHeight = headTransform.position.y;
+            currentZPosition = headTransform.position.z;
+
             t0 = Time.time;       // リマッピング開始時刻を記録
             isRemapping = true;    // リマッピングフラグを設定
         }
@@ -207,5 +302,10 @@ public class UpTracker : MonoBehaviour
             // 頭部の位置を更新
             headTransform.position = new Vector3(headTransform.position.x, newHeight, newZPosition);
         }
+    }
+    void ResetHeadRemap()
+    {
+        isRemapping = false; // リマッピング状態をリセット
+        t0 = Time.time;      // 現在の時刻を再設定
     }
 }
