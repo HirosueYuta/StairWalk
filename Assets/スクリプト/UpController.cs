@@ -6,6 +6,7 @@ public class UpController : MonoBehaviour
     public Transform rightShoe;          // 右靴のTransform
     public Transform leftShoe;           // 左靴のTransform
     public Transform headTransform;      // HMD（頭部）のTransform
+    public Transform headCamera;         //HMDの位置
 
     public float stepHeight = 0.18f;     // ステップの高さ
     public float stepDepth = 0.29f;      // ステップの奥行き
@@ -44,6 +45,11 @@ public class UpController : MonoBehaviour
     private bool bufferedLeftInput = false;
     private bool bufferedRightInput = false;
 
+    //初期位置合わせ
+    private bool isInitialHeadPositiontSet = false;
+    private float initialHeadPositionX = 0f;
+    private float initialHeadPositionZ = 0f;
+
     void Start()
     {
         currentHeadHeight = headTransform.position.y;
@@ -56,6 +62,10 @@ public class UpController : MonoBehaviour
 
     void Update()
     {
+        //初期位置調整
+        if (!isInitialHeadPositiontSet){
+            SetInitialHeadPosition();
+        }
         // SteamVRコントローラーの入力を取得
         grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
         grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
@@ -102,6 +112,17 @@ public class UpController : MonoBehaviour
         }      
     }
 
+    void SetInitialHeadPosition(){
+    //頭の初期位置調整
+    initialHeadPositionX = headCamera.position.x;
+    initialHeadPositionZ = headCamera.position.z; 
+
+    if (initialHeadPositionX != 0 || initialHeadPositionZ != 0){
+        headTransform.position = new Vector3(headTransform .position.x - headCamera.position.x, headTransform.position.y, headTransform.position.z-headCamera.position.z);
+        Debug.Log(initialHeadPositionX+","+initialHeadPositionZ);
+        isInitialHeadPositiontSet = true; // 初期高さの取得を完了
+        }
+    }
     
     void StartStep()
     {

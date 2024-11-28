@@ -26,7 +26,7 @@ public class BPMPlayer : MonoBehaviour
             audioSource.Stop(); // 再生を停止（これで位置がリセットされる）
             audioSource.Play(); // 音を再生
             count++;
-            Debug.Log("click"+count+"回目");
+            //Debug.Log("click"+count+"回目");
             timer -= interval; // タイマーをリセット
         }
     }

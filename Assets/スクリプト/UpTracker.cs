@@ -8,6 +8,7 @@ public class UpTracker : MonoBehaviour
     public Transform headTransform;      // 頭部のTransform
     public Transform leftTracker;        // 左足のトラッカー
     public Transform rightTracker;       // 右足のトラッカー
+    public Transform headCamera;         //HMDの位置
     
     // ステップ動作に関連するパラメータ
     public float stepHeight = 0.18f;     // ステップの高さ
@@ -35,6 +36,7 @@ public class UpTracker : MonoBehaviour
     private bool isLeftFootUp = false;// 左足が上方向に移動しているかどうかを示すフラグ
     [SerializeField]
     private bool isRightFootUp = false;// 右足が上方向に移動しているかどうかを示すフラグ
+
      // しきい値（ノイズ除去用）
     public float upwardThreshold = 0.03f; // この値以上の高さ変化があれば移動とみなす
     [SerializeField]
@@ -63,8 +65,15 @@ public class UpTracker : MonoBehaviour
     private float omega = 1f;                    // リマッピングの調整用係数
 
     // 入力バッファ
+    [SerializeField]
     private bool bufferedLeftInput = false;
+    [SerializeField]
     private bool bufferedRightInput = false;
+
+    //初期位置合わせ
+    private bool isInitialHeadPositiontSet = false;
+    private float initialHeadPositionX = 0f;
+    private float initialHeadPositionZ = 0f;
 
     void Start()
     {
@@ -79,82 +88,35 @@ public class UpTracker : MonoBehaviour
 
     void Update()
     {
+        //初期位置調整
+        if (!isInitialHeadPositiontSet){
+            SetInitialHeadPosition();
+        }
+
         // 初期高さが未設定の場合のみ初期高さを取得
         if (!isInitialHeightSet || initialHeightLeftTracker == 0 || initialHeightRightTracker == 0)
         {
-            //頭の初期位置
-            initialHeadHeight = headTransform.position.y; //＊＊頭の初期位置は必ず０である
-            //各足のトラッカの初期位置
-            initialHeightLeftTracker = leftTracker.position.y;
-            initialHeightRightTracker = rightTracker.position.y;
-            //初期化として前フレームの高さを現在の高さで設定
-            previousRelativeHeightLeftTracker = leftTracker.position.y;
-            previousRelativeHeightRightTracker = rightTracker.position.y;
-
-            isInitialHeightSet = true; // 初期高さの取得を完了
-            //print("initialHeight:(" + initialHeadHeight+ "," + initialHeightLeftTracker + "," + initialHeightRightTracker + ")");
+            SetInitialHeights();
         }
 
         //初期高さの設定が終わった後
         if (isInitialHeightSet)
         {
-            //トラッカーの入力を取得
-            // トラッカーの高さを相対的に計算
-            RelativeHeightLeftTracker = leftTracker.position.y - (currentHeadHeight - initialHeadHeight);
-            RelativeHeightRightTracker = rightTracker.position.y - (currentHeadHeight - initialHeadHeight);
-            //Debug.Log("Relative Height Tracker: (" + RelativeHeightLeftTracker + "," + RelativeHeightRightTracker + ")");
-            //Debug.Log("initialHeightRightTracker + stepHeight / visualGain:"+(initialHeightRightTracker+stepHeight/visualGain));
+            //トラッカの相対的高さを取得
+            UpdateRelativeHeights();
 
-            //足が初期値+20cm以内にいるかどうか
-            if (RelativeHeightLeftTracker <= initialHeightLeftTracker + 0.5f)
-            {
-                canTriggerLeft = true;
-                //Debug.Log("canTriggerLeft:"+canTriggerLeft);
-            }else{
-                canTriggerLeft = true;
-            }
-            if (RelativeHeightRightTracker <= initialHeightRightTracker + 0.5f)
-            {
-                canTriggerRight = true;
-                //Debug.Log("canTriggerRight:"+canTriggerRight);
-            }else{
-                canTriggerRight = true;
-            }
-            //上方向に動いているかを判定
-            isLeftFootUp = (RelativeHeightLeftTracker - previousRelativeHeightLeftTracker) > upwardThreshold;
-            isRightFootUp = (RelativeHeightRightTracker - previousRelativeHeightRightTracker) > upwardThreshold;
-            
-
+            //足が上がったか判定
+            IsFootTriger();
 
             //バッファ入力がないとき
             if (!isStepping){
                 //通常の入力を処理
-                if (isLeftFootUp && canTriggerLeft && !isRightFootNext)
-                {
-                    isLeftShoeTurn = true;
-                    StartStep();
-                    Debug.Log("Left Foot Start");
-                    StartHeadRemap();
-                }
-                else if (isRightFootUp && canTriggerRight && isRightShoeTurn)
-                {
-                    isRightShoeTurn = true;
-                    StartStep();
-                    Debug.Log("Roight Foot Start");
-                    StartHeadRemap();
-                }
+                ProcessStepInput();
             }
             // ステップ中の入力をバッファに保存
             else
             {
-                if ( isLeftFootUp && canTriggerLeft && isRightFootNext)
-                {
-                    bufferedLeftInput = true;
-                }
-                else if (isLeftFootUp && canTriggerLeft && !isRightFootNext)
-                {
-                    bufferedRightInput = true;
-                }
+                StoreBufferedInput();
             }
 
             // ステップ処理
@@ -172,6 +134,81 @@ public class UpTracker : MonoBehaviour
             //最後に現在の高さを次フレーム用に保存
             previousRelativeHeightLeftTracker = RelativeHeightLeftTracker;
             previousRelativeHeightRightTracker = RelativeHeightRightTracker;
+        }
+    }
+
+    void SetInitialHeadPosition(){
+    //頭の初期位置調整
+    initialHeadPositionX = headCamera.position.x;
+    initialHeadPositionZ = headCamera.position.z; 
+
+    if (!isInitialHeadPositiontSet && (initialHeadPositionX != 0 || initialHeadPositionZ != 0)){
+        headTransform.position = new Vector3(headTransform .position.x - headCamera.position.x, headTransform.position.y, headTransform.position.z-headCamera.position.z);
+        Debug.Log(initialHeadPositionX+","+initialHeadPositionZ);
+        isInitialHeadPositiontSet = true; // 初期高さの取得を完了
+        }
+    }
+    
+    //頭の初期位置を設定
+    void SetInitialHeights(){
+        //頭の初期位置
+        initialHeadHeight = headTransform.position.y; //＊＊頭の初期位置は必ず０である
+        //各足のトラッカの初期位置
+        initialHeightLeftTracker = leftTracker.position.y;
+        initialHeightRightTracker = rightTracker.position.y;
+        //初期化として前フレームの高さを現在の高さで設定
+        previousRelativeHeightLeftTracker = leftTracker.position.y;
+        previousRelativeHeightRightTracker = rightTracker.position.y;
+
+        isInitialHeightSet = true; // 初期高さの取得を完了
+        //print("initialHeight:(" + initialHeadHeight+ "," + initialHeightLeftTracker + "," + initialHeightRightTracker + ")");
+    }
+
+    void UpdateRelativeHeights(){
+        // トラッカーの高さを相対的に計算
+        RelativeHeightLeftTracker = leftTracker.position.y - (currentHeadHeight - initialHeadHeight);
+        RelativeHeightRightTracker = rightTracker.position.y - (currentHeadHeight - initialHeadHeight);
+        //Debug.Log("Relative Height Tracker: (" + RelativeHeightLeftTracker + "," + RelativeHeightRightTracker + ")");
+        //Debug.Log("initialHeightRightTracker + stepHeight / visualGain:"+(initialHeightRightTracker+stepHeight/visualGain));
+
+    }
+
+    void IsFootTriger(){    
+        // 足が初期値 + 10cm 以内にいるかどうか
+        canTriggerLeft = RelativeHeightLeftTracker <= initialHeightLeftTracker + 0.1f;
+        canTriggerRight = RelativeHeightRightTracker <= initialHeightRightTracker + 0.1f;
+        //上方向に動いているかを判定
+        isLeftFootUp = (RelativeHeightLeftTracker - previousRelativeHeightLeftTracker) > upwardThreshold;
+        isRightFootUp = (RelativeHeightRightTracker - previousRelativeHeightRightTracker) > upwardThreshold;
+    }
+
+    void ProcessStepInput(){
+        //通常の入力を処理
+        if (isLeftFootUp && canTriggerLeft && !isRightFootNext)
+        {
+            isLeftShoeTurn = true;
+            isLeftFootUp = false;
+            StartStep();
+            StartHeadRemap();
+        }
+        else if (isRightFootUp && canTriggerRight && isRightFootNext)
+        {
+            isRightShoeTurn = true;
+            isRightFootUp = false;
+            StartStep();
+            StartHeadRemap();
+        }
+    }
+
+    void StoreBufferedInput()
+    {
+        if (isLeftFootUp && canTriggerLeft && isRightFootNext)
+        {
+            bufferedLeftInput = true;
+        }
+        else if (isRightFootUp && canTriggerRight && !isRightFootNext)
+        {
+            bufferedRightInput = true;
         }
     }
 

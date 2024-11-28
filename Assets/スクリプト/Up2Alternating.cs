@@ -4,6 +4,7 @@ public class Up2Alternating : MonoBehaviour
     public Transform rightShoe;          // 右靴のTransform
     public Transform leftShoe;           // 左靴のTransform
     public Transform headTransform;      // HMD（頭部）のTransform
+    public Transform headCamera;         //HMDの位置
 
     public float stepHeight = 0.18f;     // ステップの高さ
     public float stepDepth = 0.29f;      // ステップの奥行き
@@ -20,15 +21,9 @@ public class Up2Alternating : MonoBehaviour
     private bool grapgripRightHand;
 
     private bool isStepping = false;    // ステップ中かどうか
-
-    [SerializeField]
     public bool isRightFootNext = true;
-
-    [SerializeField]
-    private bool isRightShoeTurn = false;
-
-    [SerializeField]
-    private bool isLeftShoeTurn = false;
+    public bool isRightShoeTurn = false;
+    public bool isLeftShoeTurn = false;
     private bool isFirstStep = true;
     private float progress = 0.0f;
     private Vector3 startPosition;
@@ -42,6 +37,11 @@ public class Up2Alternating : MonoBehaviour
     private bool bufferedLeftInput = false;
     private bool bufferedRightInput = false;
 
+    //初期位置合わせ
+    private bool isInitialHeadPositiontSet = false;
+    private float initialHeadPositionX = 0f;
+    private float initialHeadPositionZ = 0f;
+
     void Start()
     {
         currentHeadHeight = headTransform.position.y;
@@ -54,6 +54,11 @@ public class Up2Alternating : MonoBehaviour
 
     void Update()
     {
+        //初期位置調整
+        if (!isInitialHeadPositiontSet){
+            SetInitialHeadPosition();
+        }
+
         // キーボード入力を取得
         grapgripLeftHand = Input.GetKeyDown(KeyCode.A);
         grapgripRightHand = Input.GetKeyDown(KeyCode.D);
@@ -98,6 +103,18 @@ public class Up2Alternating : MonoBehaviour
         if (isRemapping)
         {
             RemapHeadHeight();
+        }
+    }
+
+    void SetInitialHeadPosition(){
+    //頭の初期位置調整
+    initialHeadPositionX = headCamera.position.x;
+    initialHeadPositionZ = headCamera.position.z; 
+
+    if (initialHeadPositionX != 0 || initialHeadPositionZ != 0){
+        headTransform.position = new Vector3(headTransform .position.x - headCamera.position.x, headTransform.position.y, headTransform.position.z-headCamera.position.z);
+        Debug.Log(initialHeadPositionX+","+initialHeadPositionZ);
+        isInitialHeadPositiontSet = true; // 初期高さの取得を完了
         }
     }
 
