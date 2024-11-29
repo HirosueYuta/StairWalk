@@ -9,26 +9,26 @@ public class UpEMG_pulse : MonoBehaviour
     public Transform headCamera;  //HMDの位置
 
     // 靴のTransformと階段動作に関連するパラメータ
-    public float stepHeight = 0.18f;
-    public float stepDepth = 0.29f;
+    private float stepHeight = 0.17995f;
+    private float stepDepth = 0.29f;
     public float stepDuration = 0.8f; 
-    public float curveStrength = 1.0f;  
-    public float transitionStiffnessShoe = 10.0f;
+    private float curveStrength = 1.0f;  
+    private float transitionStiffnessShoe = 10.0f;
 
     // 頭部（HMD）のTransformとリマッピングに関連するパラメータ
-    public float transitionStiffnessHeadY = 12f;  
-    public float transitionStiffnessHeadZ = 12f;  
+    private float transitionStiffnessHeadY = 12f;  
+    private float transitionStiffnessHeadZ = 12f;  
     private float currentHeadHeight;  
     private float currentZPosition;   
 
     // 筋電位（EMG）データ受信用
-    public EMGDataReceiver emgDataReceiver;  
+    public EMGDataCalibrator emgDataCalibrator;  
     public float pulseThreshold = 25f;       // ピーク検出のための最小値
-    public int peakDetectionWindow = 5;      // ピーク検出のためのウィンドウサイズ（点数）
+    //private int peakDetectionWindow = 5;      // ピーク検出のためのウィンドウサイズ（点数）
     [SerializeField]
-    private int EMGDataLeft;
+    public float EMGDataLeft;
     [SerializeField]
-    private int EMGDataRight;
+    public float EMGDataRight;
     
     // 筋電位データの履歴
     private List<float> rightEmgHistory = new List<float>(); 
@@ -136,8 +136,8 @@ public class UpEMG_pulse : MonoBehaviour
 
     void IsOverThreshold(){
         // 筋電位データを更新
-        EMGDataLeft = emgDataReceiver.emgValue2;
-        EMGDataRight = emgDataReceiver.emgValue1;
+        EMGDataLeft = emgDataCalibrator.calibratedEmgValue2;
+        EMGDataRight = emgDataCalibrator.calibratedEmgValue1;
 
         isDetectLeftPeak = EMGDataLeft>pulseThreshold;
         isDetectRightPeak = EMGDataRight>pulseThreshold;

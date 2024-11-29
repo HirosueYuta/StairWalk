@@ -8,30 +8,25 @@ public class UpController : MonoBehaviour
     public Transform headTransform;      // HMD（頭部）のTransform
     public Transform headCamera;         //HMDの位置
 
-    public float stepHeight = 0.18f;     // ステップの高さ
-    public float stepDepth = 0.29f;      // ステップの奥行き
+    private float stepHeight = 0.17995f;     // ステップの高さ
+    private float stepDepth = 0.29f;      // ステップの奥行き
     public float stepDuration = 0.8f;    // ステップの継続時間
-    public float curveStrength = 1.0f;   // ステップの曲線強度
-    public float transitionStiffnessShoe = 10.0f; // 靴移動の滑らかさ
+    private float curveStrength = 1.0f;   // ステップの曲線強度
+    private float transitionStiffnessShoe = 10.0f; // 靴移動の滑らかさ
 
-    public float transitionStiffnessHeadY = 12f;  // 頭部Y軸リマッピングの滑らかさ
-    public float transitionStiffnessHeadZ = 12f;  // 頭部Z軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadY = 12f;  // 頭部Y軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadZ = 12f;  // 頭部Z軸リマッピングの滑らかさ
     private float currentHeadHeight;             // 現在の頭部高さ
     private float currentZPosition;              // 現在の頭部Z位置
 
     private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip; // GrabGripボタンのアクション
-    private bool grapgripLeftHand;
-    private bool grapgripRightHand;
+    public bool grapgripLeftHand;
+    public bool grapgripRightHand;
     private bool isStepping = false;    // ステップ中かどうか
 
-    [SerializeField]
-    public bool isRightFootNext = true;
-
-    [SerializeField]
-    private bool isRightShoeTurn = false;
-
-    [SerializeField]
-    private bool isLeftShoeTurn = false;
+    private bool isRightFootNext = true;
+    public bool isRightShoeTurn = false;
+    public bool isLeftShoeTurn = false;
     private bool isFirstStep = true;
     private float progress = 0.0f;
     private Vector3 startPosition;

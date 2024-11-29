@@ -11,15 +11,15 @@ public class UpTracker : MonoBehaviour
     public Transform headCamera;         //HMDの位置
     
     // ステップ動作に関連するパラメータ
-    public float stepHeight = 0.18f;     // ステップの高さ
-    public float stepDepth = 0.29f;      // ステップの奥行き
+    private float stepHeight = 0.17995f;     // ステップの高さ
+    private float stepDepth = 0.29f;      // ステップの奥行き
     public float stepDuration = 0.8f;    // ステップの継続時間
-    public float curveStrength = 1.0f;   // ステップの曲線強度
-    public float transitionStiffnessShoe = 10.0f; // 靴の遷移の滑らかさ
+    private float curveStrength = 1.0f;   // ステップの曲線強度
+    private float transitionStiffnessShoe = 10.0f; // 靴の遷移の滑らかさ
     
     // 頭部のリマッピングに関連するパラメータ
-    public float transitionStiffnessHeadY = 12f;  // Y軸リマッピングの滑らかさ
-    public float transitionStiffnessHeadZ = 12f;  // Z軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadY = 12f;  // Y軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadZ = 12f;  // Z軸リマッピングの滑らかさ
     private float initialHeadHeight;
     private float currentHeadHeight;              // 現在の頭部高さ
     private float currentZPosition;               // 現在の頭部Z位置
@@ -28,34 +28,25 @@ public class UpTracker : MonoBehaviour
     //public float visualGain = 1.193f;            // 視覚的ゲイン
     private float initialHeightLeftTracker;      // 左トラッカーの初期高さ
     private float initialHeightRightTracker;     // 右トラッカーの初期高さ
-    private float RelativeHeightRightTracker;    //右トラッカーの相対高さ
-    private float RelativeHeightLeftTracker;     //左トラッカの相対高さ
+    public float RelativeHeightRightTracker;    //右トラッカーの相対高さ
+    public float RelativeHeightLeftTracker;     //左トラッカの相対高さ
     private float previousRelativeHeightRightTracker;    //前フレームの右トラッカーの相対高さ
     private float previousRelativeHeightLeftTracker;     //左トラッカの相対高さ
-    [SerializeField]
-    private bool isLeftFootUp = false;// 左足が上方向に移動しているかどうかを示すフラグ
-    [SerializeField]
-    private bool isRightFootUp = false;// 右足が上方向に移動しているかどうかを示すフラグ
+    public bool isLeftFootUp = false;// 左足が上方向に移動しているかどうかを示すフラグ
+    public bool isRightFootUp = false;// 右足が上方向に移動しているかどうかを示すフラグ
 
      // しきい値（ノイズ除去用）
-    public float upwardThreshold = 0.03f; // この値以上の高さ変化があれば移動とみなす
-    [SerializeField]
-    private bool canTriggerLeft = true;          // 左足のトリガー許可
-    [SerializeField]
-    private bool canTriggerRight = true;         // 右足のトリガー許可
+    private float upwardThreshold = 0.03f; // この値以上の高さ変化があれば移動とみなす
+    public bool canTriggerLeft = true;          // 左足のトリガー許可
+    public bool canTriggerRight = true;         // 右足のトリガー許可
     private bool isInitialHeightSet = false;     //トラッカーの初期高さ設定をしたかどうか
 
     // ステップ状態とフラグ
     private bool isStepping = false;             // ステップ中かどうか
 
-    [SerializeField]
     public bool isRightFootNext = true;
-
-    [SerializeField]
-    private bool isRightShoeTurn = false;
-
-    [SerializeField]
-    private bool isLeftShoeTurn = false;   
+    public bool isRightShoeTurn = false;
+    public bool isLeftShoeTurn = false;   
     private bool isFirstStep = true;             // 最初のステップかどうか
     private float progress = 0.0f;               // ステップの進行状況
     private Vector3 startPosition;               // ステップ開始位置
@@ -65,9 +56,7 @@ public class UpTracker : MonoBehaviour
     private float omega = 1f;                    // リマッピングの調整用係数
 
     // 入力バッファ
-    [SerializeField]
     private bool bufferedLeftInput = false;
-    [SerializeField]
     private bool bufferedRightInput = false;
 
     //初期位置合わせ
