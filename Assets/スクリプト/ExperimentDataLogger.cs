@@ -30,7 +30,7 @@ public class ExperimentDataCollector : MonoBehaviour
     // データ収集用
     private List<string> collectedData = new List<string>();
     private float startTime;
-    [SerializeField] private bool isRecording = false; // 記録中かどうか（インスペクターで編集可能）
+    [SerializeField] public bool isRecording = false; // 記録中かどうか
     private float recordingDuration = 60f; // 記録時間（秒）
 
     // トリガー状態の追跡
@@ -74,11 +74,13 @@ public class ExperimentDataCollector : MonoBehaviour
         if (isRecording)
         {
             startTime = Time.time; // 記録開始時刻を設定
-
+            audioSource.PlayOneShot(startSound);
+            Debug.Log("ppppppppppppppppp");
             // 開始音を再生
             if (startSound != null)
             {
                 audioSource.PlayOneShot(startSound);
+                Debug.Log("ppppppppppppppppp");
             }
 
             Debug.Log("Recording started");

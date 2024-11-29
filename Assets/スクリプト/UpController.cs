@@ -166,12 +166,12 @@ public class UpController : MonoBehaviour
             if (isRightShoeTurn)
             {
                 isRightShoeTurn = false;
-                Debug.Log("右足のステップが完了しました");
+                //Debug.Log("右足のステップが完了しました");
             }
             else if (isLeftShoeTurn)
             {
                 isLeftShoeTurn = false;
-                Debug.Log("左足のステップが完了しました");
+                //Debug.Log("左足のステップが完了しました");
             }
 
             isFirstStep = false;
