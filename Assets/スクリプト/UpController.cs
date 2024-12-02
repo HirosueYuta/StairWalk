@@ -20,6 +20,7 @@ public class UpController : MonoBehaviour
     private float currentZPosition;              // 現在の頭部Z位置
 
     private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip; // GrabGripボタンのアクション
+    private SteamVR_Action_Boolean Iui = SteamVR_Actions.default_InteractUI;
     public bool grapgripLeftHand;
     public bool grapgripRightHand;
     private bool isStepping = false;    // ステップ中かどうか
@@ -62,8 +63,11 @@ public class UpController : MonoBehaviour
             SetInitialHeadPosition();
         }
         // SteamVRコントローラーの入力を取得
-        grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
-        grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
+        // grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
+        // grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
+
+        grapgripLeftHand = Iui.GetStateDown(SteamVR_Input_Sources.LeftHand);
+        grapgripRightHand = Iui.GetStateDown(SteamVR_Input_Sources.RightHand);
 
         // ステップ中の入力をバッファに保存
         if (isStepping)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
+using Valve.VR; // SteamVR関連クラスを使用
 
 public class ExperimentDataCollector : MonoBehaviour
 {
@@ -21,6 +22,8 @@ public class ExperimentDataCollector : MonoBehaviour
 
     // UpController専用
     public UpController upControllerScript;
+    private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip; // GrabGripボタンのアクション
+    private SteamVR_Action_Boolean Iui = SteamVR_Actions.default_InteractUI;
 
     //UpAlternating専用
     public Up2Alternating up2Alternating;
@@ -44,20 +47,18 @@ public class ExperimentDataCollector : MonoBehaviour
     public bool prevControllerTrigger = false;
 
     // 保存先ディレクトリ（指定のパス）
-    //private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ"; DeskTop PC
-    private string saveDirectory = @"/Users/hiroshimatsuyuuta/Documents/研究室/卒論/環境/実験データ"; //MacBook
+    private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ"; //DeskTop PC
+    //private string saveDirectory = @"/Users/hiroshimatsuyuuta/Documents/研究室/卒論/環境/実験データ"; //MacBook
 
     void Start()
     {
         isReadyRecord = false;
         isRecording = false;
-        audioSource = gameObject.AddComponent<AudioSource>();
-        if (startTime == null){
-            startTime = Time.time; // 記録開始時刻を設定
-        }
+        audioSource = gameObject.GetComponent<AudioSource>();
+        startTime = -1;
 
         // CSVのヘッダーを追加
-        collectedData.Add("Time,Head_Y,RightShoe_Y,LeftShoe_Y,RightShoeTurn,LeftShoeTurn,EMG_Left,EMG_Right,Tracker_Left,Tracker_Right,EMG_Trigger,Tracker_Trigger,Controller");
+        collectedData.Add("Time,Head_Y,RightShoe_Y,LeftShoe_Y,RightShoeTurn,LeftShoeTurn,EMG_Left,EMG_Right,Tracker_Left,Tracker_Right,LeftEMG_Trigger,RightEMG_Trigger,LeftTracker_Trigger,RightTracker_Trigger,Controller");
     }
 
     void Update()
@@ -83,7 +84,10 @@ public class ExperimentDataCollector : MonoBehaviour
 
     public void StartRecording()
     {
-        // 開始音を再生
+        if (startTime == -1){
+            startTime = Time.time; // 記録開始時刻を設定
+
+                    // 開始音を再生
         if (startSound != null)
         {
             audioSource.PlayOneShot(startSound);
@@ -92,6 +96,8 @@ public class ExperimentDataCollector : MonoBehaviour
         Debug.Log("Recording started");
 
         isRecording  = true;
+        }
+
     }
 
     private void StopRecording()
@@ -125,8 +131,12 @@ public class ExperimentDataCollector : MonoBehaviour
         float trackerLeft = 0;
         float trackerRight = 0;
 
-        bool emgTrigger = false;
-        bool trackerTrigger = false;
+        //bool emgTrigger = false;
+        bool RightemgTrigger = false;
+        bool LeftemgTrigger = false;
+        //bool trackerTrigger = false;
+        bool LefttrackerTrigger = false;
+        bool RighttrackerTrigger = false;
         bool controllerTrigger = false;
 
         switch (experimentType)
@@ -140,15 +150,15 @@ public class ExperimentDataCollector : MonoBehaviour
                     emgRight = upEMGScript.EMGDataRight;
 
                     // EMGトリガー判定
-                    emgTrigger = ((upEMGScript.isDetectRightPeak && upEMGScript.isRightFootNext) || 
+                    LeftemgTrigger = (
                                   (upEMGScript.isDetectLeftPeak && !upEMGScript.isRightFootNext) || 
-                                  (upEMGScript.isDetectRightPeak && !upEMGScript.isRightFootNext) || 
-                                  (upEMGScript.isDetectLeftPeak && upEMGScript.isRightFootNext)) 
-                                   && !prevEmgTrigger;
-                    prevEmgTrigger = (upEMGScript.isDetectRightPeak && upEMGScript.isRightFootNext) || 
-                                     (upEMGScript.isDetectLeftPeak && !upEMGScript.isRightFootNext) || 
-                                     (upEMGScript.isDetectRightPeak && !upEMGScript.isRightFootNext) || 
-                                     (upEMGScript.isDetectLeftPeak && upEMGScript.isRightFootNext);
+                                  (upEMGScript.isDetectLeftPeak && upEMGScript.isRightFootNext)) ;
+                        
+                    RightemgTrigger = ((upEMGScript.isDetectRightPeak && upEMGScript.isRightFootNext) || 
+                                  
+                                  (upEMGScript.isDetectRightPeak && !upEMGScript.isRightFootNext)
+                                  );
+        
                 }
                 break;
 
@@ -161,15 +171,11 @@ public class ExperimentDataCollector : MonoBehaviour
                     trackerRight = upTrackerScript.RelativeHeightRightTracker;
 
                     // トラッカートリガー判定 (初めてしきい値を超えたとき)
-                    trackerTrigger = ((upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && !upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && !upTrackerScript.isRightFootNext)) 
-                                       && !prevTrackerTrigger;
-                    prevTrackerTrigger = (upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && !upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && upTrackerScript.isRightFootNext) || 
-                                      (upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && !upTrackerScript.isRightFootNext);
+                    LefttrackerTrigger = ((upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && !upTrackerScript.isRightFootNext) || 
+                                            (upTrackerScript.isLeftFootUp && upTrackerScript.canTriggerLeft && upTrackerScript.isRightFootNext)  );
+                    RighttrackerTrigger = ((upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && upTrackerScript.isRightFootNext) || 
+                                            (upTrackerScript.isRightFootUp && upTrackerScript.canTriggerRight && !upTrackerScript.isRightFootNext)) ;
+                    
                 }
                 break;
 
@@ -180,8 +186,8 @@ public class ExperimentDataCollector : MonoBehaviour
                     isLeftShoeTurn = upControllerScript.isLeftShoeTurn;
 
                     // コントローラートリガー判定 (ボタン押下の瞬間)
-                    controllerTrigger = (upControllerScript.grapgripLeftHand || upControllerScript.grapgripRightHand) && !prevControllerTrigger;
-                    prevControllerTrigger = upControllerScript.grapgripLeftHand || upControllerScript.grapgripRightHand;
+                    controllerTrigger = Iui.GetStateDown(SteamVR_Input_Sources.LeftHand) || Iui.GetStateDown(SteamVR_Input_Sources.RightHand);
+                    prevControllerTrigger = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand) || GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
                 }
                 break;
             
@@ -190,12 +196,14 @@ public class ExperimentDataCollector : MonoBehaviour
                 {
                     isRightShoeTurn = up2Alternating.isRightShoeTurn;
                     isLeftShoeTurn = up2Alternating.isLeftShoeTurn;
+
+                    //controllerTrigger = Input.GetKeyDown(KeyCode.A)|| Input.GetKeyDown(KeyCode.D);
                 }
                 break;                
         }
 
         // データを追加
-        string data = $"{elapsedTime:F2},{headY:F3},{rightShoeY:F3},{leftShoeY:F3},{isRightShoeTurn},{isLeftShoeTurn},{emgLeft:F3},{emgRight:F3},{trackerLeft:F3},{trackerRight:F3},{(emgTrigger ? 1 : 0)},{(trackerTrigger ? 1 : 0)},{(controllerTrigger ? 1 : 0)}";
+        string data = $"{elapsedTime:F2},{headY:F3},{rightShoeY:F3},{leftShoeY:F3},{isRightShoeTurn},{isLeftShoeTurn},{emgLeft:F3},{emgRight:F3},{trackerLeft:F3},{trackerRight:F3},{(LeftemgTrigger ? 1 : 0)},{(RightemgTrigger ? 1 : 0)},{(LefttrackerTrigger ? 1 : 0)},{(RighttrackerTrigger ? 1 : 0)},{(controllerTrigger ? 1 : 0)}";
         collectedData.Add(data);
         Debug.Log(data); // デバッグ用ログ
     }
@@ -203,7 +211,7 @@ public class ExperimentDataCollector : MonoBehaviour
     private void SaveDataToFile()
     {
         // ファイル名を実験タイプ＋インスペクター指定名で設定
-        string fileName = $"{experimentType}_{customFileName}.csv";
+        string fileName = $"{experimentType}_{customFileName}_{Time.time}.csv";
 
         // 保存先ディレクトリの確認と作成
         if (!Directory.Exists(saveDirectory))
