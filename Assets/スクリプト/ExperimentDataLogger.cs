@@ -4,7 +4,7 @@ using System.IO;
 
 public class ExperimentDataCollector : MonoBehaviour
 {
-    public enum ExperimentType { UpEMG, UpTracker, UpController }
+    public enum ExperimentType { UpEMG, UpTracker, UpController, UpAlternating }
     public ExperimentType experimentType; // インスペクターで選択可能
 
     public string customFileName = "Experiment"; // 保存するファイル名をインスペクターで指定
@@ -22,6 +22,10 @@ public class ExperimentDataCollector : MonoBehaviour
     // UpController専用
     public UpController upControllerScript;
 
+    //UpAlternating専用
+    public Up2Alternating up2Alternating;
+
+
     // 音声
     public AudioClip startSound;  // 記録開始時の音声
     public AudioClip stopSound;   // 記録終了時の音声
@@ -30,6 +34,7 @@ public class ExperimentDataCollector : MonoBehaviour
     // データ収集用
     private List<string> collectedData = new List<string>();
     private float startTime;
+    [SerializeField] public bool isReadyRecord = false; // 記録する準備ができたか
     [SerializeField] public bool isRecording = false; // 記録中かどうか
     private float recordingDuration = 60f; // 記録時間（秒）
 
@@ -39,12 +44,17 @@ public class ExperimentDataCollector : MonoBehaviour
     public bool prevControllerTrigger = false;
 
     // 保存先ディレクトリ（指定のパス）
-    private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ";
+    //private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ"; DeskTop PC
+    private string saveDirectory = @"/Users/hiroshimatsuyuuta/Documents/研究室/卒論/環境/実験データ"; //MacBook
 
     void Start()
     {
+        isReadyRecord = false;
         isRecording = false;
         audioSource = gameObject.AddComponent<AudioSource>();
+        if (startTime == null){
+            startTime = Time.time; // 記録開始時刻を設定
+        }
 
         // CSVのヘッダーを追加
         collectedData.Add("Time,Head_Y,RightShoe_Y,LeftShoe_Y,RightShoeTurn,LeftShoeTurn,EMG_Left,EMG_Right,Tracker_Left,Tracker_Right,EMG_Trigger,Tracker_Trigger,Controller");
@@ -53,38 +63,35 @@ public class ExperimentDataCollector : MonoBehaviour
     void Update()
     {
         // 記録中のデータ収集
-        if (isRecording)
+        if (isReadyRecord) //スタート時にインスペクターでtrueに変更
         {
-            float elapsedTime = Time.time - startTime;
+            StartRecording();
 
-            // 記録時間を超えたら停止
-            if (elapsedTime >= recordingDuration)
-            {
-                StopRecording();
-                return;
+            if (isRecording){
+                float CountTime = Time.time - startTime;
+                // 記録時間を超えたら停止
+                if (CountTime >= recordingDuration)
+                {
+                    StopRecording();
+                    return;
+                }
+                // トリガーデータを収集して記録
+                CollectData(CountTime);
             }
-
-            // トリガーデータを収集して記録
-            CollectData(elapsedTime);
         }
     }
 
     public void StartRecording()
     {
-        if (isRecording)
+        // 開始音を再生
+        if (startSound != null)
         {
-            startTime = Time.time; // 記録開始時刻を設定
             audioSource.PlayOneShot(startSound);
-            Debug.Log("ppppppppppppppppp");
-            // 開始音を再生
-            if (startSound != null)
-            {
-                audioSource.PlayOneShot(startSound);
-                Debug.Log("ppppppppppppppppp");
-            }
-
-            Debug.Log("Recording started");
         }
+
+        Debug.Log("Recording started");
+
+        isRecording  = true;
     }
 
     private void StopRecording()
@@ -101,6 +108,7 @@ public class ExperimentDataCollector : MonoBehaviour
 
         // データ保存
         SaveDataToFile();
+        isReadyRecord = false;
     }
 
     private void CollectData(float elapsedTime)
@@ -176,6 +184,14 @@ public class ExperimentDataCollector : MonoBehaviour
                     prevControllerTrigger = upControllerScript.grapgripLeftHand || upControllerScript.grapgripRightHand;
                 }
                 break;
+            
+            case ExperimentType.UpAlternating:
+                if (up2Alternating != null)
+                {
+                    isRightShoeTurn = up2Alternating.isRightShoeTurn;
+                    isLeftShoeTurn = up2Alternating.isLeftShoeTurn;
+                }
+                break;                
         }
 
         // データを追加
