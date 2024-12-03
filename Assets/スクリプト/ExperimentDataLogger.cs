@@ -52,11 +52,6 @@ public class ExperimentDataCollector : MonoBehaviour
     [SerializeField] public bool isRecording = false; // 記録中かどうか
     private float recordingDuration = 60f; // 記録時間（秒）
 
-    // トリガー状態の追跡
-    public bool prevEmgTrigger = false;
-    public bool prevTrackerTrigger = false;
-    public bool prevControllerTrigger = false;
-
     // 保存先ディレクトリ（指定のパス）
     private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ"; //DeskTop PC
     //private string saveDirectory = @"/Users/hiroshimatsuyuuta/Documents/研究室/卒論/環境/実験データ"; //MacBook
@@ -247,7 +242,6 @@ public class ExperimentDataCollector : MonoBehaviour
 
                     // コントローラートリガー判定 (ボタン押下の瞬間)
                     controllerTrigger = Iui.GetStateDown(SteamVR_Input_Sources.LeftHand) || Iui.GetStateDown(SteamVR_Input_Sources.RightHand);
-                    prevControllerTrigger = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand) || GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
                 }
                 break;
             
