@@ -6,27 +6,38 @@ using Valve.VR; // SteamVR関連クラスを使用
 public class ExperimentDataCollector : MonoBehaviour
 {
     public enum ExperimentType { UpEMG, UpTracker, UpController, UpAlternating }
-    public ExperimentType experimentType; // インスペクターで選択可能
-
+    public ExperimentType experimentType; 
     public string customFileName = "Experiment"; // 保存するファイル名をインスペクターで指定
-
+    [SerializeField] private float stepDuration = 0.8f; // デフォルト値を1秒に設定
+    // BPMオブジェクトの参照
+    public GameObject BPM50;
+    public GameObject BPM75;
+    public GameObject BPM120;
+    public enum BpmType { Bpm50, Bpm75, Bpm120 }
+    public BpmType bpmType;
+    
+    //HMD
     public Transform headTransform;
     public Transform rightShoe;
     public Transform leftShoe;
 
     // UpEMG専用
     public UpEMG_pulse upEMGScript;
+    public GameObject upEMG;
 
     // UpTracker専用
     public UpTracker upTrackerScript;
+    public GameObject upTracker;
 
     // UpController専用
     public UpController upControllerScript;
+    public GameObject upContoller;
     private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip; // GrabGripボタンのアクション
     private SteamVR_Action_Boolean Iui = SteamVR_Actions.default_InteractUI;
 
     //UpAlternating専用
     public Up2Alternating up2Alternating;
+    public GameObject upAlternating;
 
 
     // 音声
@@ -56,6 +67,55 @@ public class ExperimentDataCollector : MonoBehaviour
         isRecording = false;
         audioSource = gameObject.GetComponent<AudioSource>();
         startTime = -1;
+
+        switch (experimentType){
+            case ExperimentType.UpEMG:
+                upEMG.SetActive(true);
+                upTracker.SetActive(false);
+                upContoller.SetActive(false);
+                upAlternating.SetActive(false);
+                break;
+            case ExperimentType.UpTracker:
+                upEMG.SetActive(false);
+                upTracker.SetActive(true);
+                upContoller.SetActive(false);
+                upAlternating.SetActive(false);
+                break;
+            case ExperimentType.UpController:
+                upEMG.SetActive(false);
+                upTracker.SetActive(false);
+                upContoller.SetActive(true);
+                upAlternating.SetActive(false);
+                break;
+            case ExperimentType.UpAlternating:
+                upEMG.SetActive(false);
+                upTracker.SetActive(false);
+                upContoller.SetActive(false);
+                upAlternating.SetActive(true);
+                break;    
+        }
+
+        // 実験タイプに応じた stepDuration の変更
+        SetStepDuration();
+
+        //BPMの設定
+        switch (bpmType){
+            case BpmType.Bpm50:
+                BPM50.SetActive(true);
+                BPM75.SetActive(false);
+                BPM120.SetActive(false);
+                break;
+            case BpmType.Bpm75:
+                BPM50.SetActive(false);
+                BPM75.SetActive(true);
+                BPM120.SetActive(false);
+                break;
+            case BpmType.Bpm120:
+                BPM50.SetActive(false);
+                BPM75.SetActive(false);
+                BPM120.SetActive(true);
+                break;
+        }
 
         // CSVのヘッダーを追加
         collectedData.Add("Time,Head_Y,RightShoe_Y,LeftShoe_Y,RightShoeTurn,LeftShoeTurn,EMG_Left,EMG_Right,Tracker_Left,Tracker_Right,LeftEMG_Trigger,RightEMG_Trigger,LeftTracker_Trigger,RightTracker_Trigger,Controller");
@@ -211,7 +271,7 @@ public class ExperimentDataCollector : MonoBehaviour
     private void SaveDataToFile()
     {
         // ファイル名を実験タイプ＋インスペクター指定名で設定
-        string fileName = $"{experimentType}_{customFileName}_{Time.time}.csv";
+        string fileName = $"{experimentType}_{bpmType}_{customFileName}_{Time.time}.csv";
 
         // 保存先ディレクトリの確認と作成
         if (!Directory.Exists(saveDirectory))
@@ -225,5 +285,38 @@ public class ExperimentDataCollector : MonoBehaviour
         // データをCSV形式で保存
         File.WriteAllLines(filePath, collectedData);
         Debug.Log($"Data saved to {filePath}");
+    }
+
+    void SetStepDuration(){
+        switch (experimentType)
+        {
+            case ExperimentType.UpEMG:
+                if (upEMGScript != null)
+                {
+                    upEMGScript.stepDuration = stepDuration;
+                }
+                break;
+
+            case ExperimentType.UpTracker:
+                if (upTrackerScript != null)
+                {
+                    upTrackerScript.stepDuration = stepDuration;
+                }
+                break;
+
+            case ExperimentType.UpController:
+                if (upControllerScript != null)
+                {
+                    upControllerScript.stepDuration = stepDuration;
+                }
+                break;
+
+            case ExperimentType.UpAlternating:
+                if (up2Alternating != null)
+                {
+                    up2Alternating.stepDuration = stepDuration;
+                }
+                break;
+        }
     }
 }
