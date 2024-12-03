@@ -67,7 +67,11 @@ public class UpEMG_pulse : MonoBehaviour
 
         isLeftShoeTurn = false;
         isRightShoeTurn = false;
-        isRightFootNext = true;                
+        isRightFootNext = true;
+
+        // スタート時に右足を一段分上げる
+        rightShoe.position = new Vector3(rightShoe.position.x, rightShoe.position.y+stepHeight, rightShoe.position.z+stepDepth);
+        isFirstStep = false;               
     }
 
     void Update()
@@ -84,15 +88,15 @@ public class UpEMG_pulse : MonoBehaviour
         if (!isStepping)
         {
             // 通常の入力を処理
-            if (isDetectRightPeak && isRightFootNext)
+            if (isDetectRightPeak && isRightFootNext)//右足の閾値が超えたら、左足を上げる
             {
-                isRightShoeTurn = true;
+                isLeftShoeTurn = true;//左足が動く
                 StartStep();
                 StartHeadRemap();
             }
             else if (isDetectLeftPeak && !isRightFootNext)
             {
-                isLeftShoeTurn = true;
+                isRightShoeTurn = true;
                 StartStep();
                 StartHeadRemap();
             }
@@ -239,7 +243,7 @@ public class UpEMG_pulse : MonoBehaviour
         if (bufferedRightInput && isRightFootNext)
         {
             bufferedRightInput = false;
-            isRightShoeTurn = true;
+            isLeftShoeTurn = true;
             
             // 頭部リマッピングを再リセットして再開
             ResetHeadRemap();
@@ -250,7 +254,7 @@ public class UpEMG_pulse : MonoBehaviour
         else if (bufferedLeftInput && !isRightFootNext)
         {
             bufferedLeftInput = false;
-            isLeftShoeTurn = true;
+            isRightShoeTurn = true;
 
             // 頭部リマッピングを再リセットして再開
             ResetHeadRemap();
