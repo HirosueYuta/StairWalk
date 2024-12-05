@@ -10,10 +10,10 @@ public class ExperimentDataCollector : MonoBehaviour
     public string customFileName = "Experiment"; // 保存するファイル名をインスペクターで指定
     [SerializeField] private float stepDuration = 0.8f; // デフォルト値を1秒に設定
     // BPMオブジェクトの参照
-    public GameObject BPM50;
-    public GameObject BPM75;
+    public GameObject BPM60;
+    public GameObject BPM90;
     public GameObject BPM120;
-    public enum BpmType { Bpm50, Bpm75, Bpm120 }
+    public enum BpmType { Bpm60, Bpm90, Bpm120 }
     public BpmType bpmType;
     
     //HMD
@@ -95,19 +95,19 @@ public class ExperimentDataCollector : MonoBehaviour
 
         //BPMの設定
         switch (bpmType){
-            case BpmType.Bpm50:
-                BPM50.SetActive(true);
-                BPM75.SetActive(false);
+            case BpmType.Bpm60:
+                BPM60.SetActive(true);
+                BPM90.SetActive(false);
                 BPM120.SetActive(false);
                 break;
-            case BpmType.Bpm75:
-                BPM50.SetActive(false);
-                BPM75.SetActive(true);
+            case BpmType.Bpm90:
+                BPM60.SetActive(false);
+                BPM90.SetActive(true);
                 BPM120.SetActive(false);
                 break;
             case BpmType.Bpm120:
-                BPM50.SetActive(false);
-                BPM75.SetActive(false);
+                BPM60.SetActive(false);
+                BPM90.SetActive(false);
                 BPM120.SetActive(true);
                 break;
         }
