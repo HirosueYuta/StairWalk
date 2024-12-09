@@ -8,7 +8,7 @@ public class ExperimentDataCollector : MonoBehaviour
     public enum ExperimentType { UpEMG, UpTracker, UpController, UpAlternating }
     public ExperimentType experimentType; 
     public string customFileName = "Experiment"; // 保存するファイル名をインスペクターで指定
-    [SerializeField] private float stepDuration = 0.8f; // デフォルト値を1秒に設定
+    public float stepDuration = 0.8f; // デフォルト値を1秒に設定
     // BPMオブジェクトの参照
     public GameObject BPM60;
     public GameObject BPM90;
@@ -53,7 +53,7 @@ public class ExperimentDataCollector : MonoBehaviour
     private float recordingDuration = 60f; // 記録時間（秒）
 
     // 保存先ディレクトリ（指定のパス）
-    private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ"; //DeskTop PC
+    private string saveDirectory = @"C:\Users\Hirosue Yuta\OneDrive - 学校法人立命館\デスクトップ\ドキュメント\HirosueYuta\実験データ\生データ"; //DeskTop PC
     //private string saveDirectory = @"/Users/hiroshimatsuyuuta/Documents/研究室/卒論/環境/実験データ"; //MacBook
 
     void Start()
@@ -90,27 +90,30 @@ public class ExperimentDataCollector : MonoBehaviour
                 break;    
         }
 
-        // 実験タイプに応じた stepDuration の変更
-        SetStepDuration();
-
         //BPMの設定
         switch (bpmType){
             case BpmType.Bpm60:
+                stepDuration = 0.99f;
                 BPM60.SetActive(true);
                 BPM90.SetActive(false);
                 BPM120.SetActive(false);
                 break;
             case BpmType.Bpm90:
+                stepDuration = 0.65f;
                 BPM60.SetActive(false);
                 BPM90.SetActive(true);
                 BPM120.SetActive(false);
                 break;
             case BpmType.Bpm120:
+                stepDuration = 0.49f;
                 BPM60.SetActive(false);
                 BPM90.SetActive(false);
                 BPM120.SetActive(true);
                 break;
+        
         }
+        // 実験タイプごとに、このスクリプトのstepDurationに変更
+        SetStepDuration();
 
         // CSVのヘッダーを追加
         collectedData.Add("Time,Head_Y,RightShoe_Y,LeftShoe_Y,RightShoeTurn,LeftShoeTurn,EMG_Left,EMG_Right,Tracker_Left,Tracker_Right,LeftEMG_Trigger,RightEMG_Trigger,LeftTracker_Trigger,RightTracker_Trigger,Controller");

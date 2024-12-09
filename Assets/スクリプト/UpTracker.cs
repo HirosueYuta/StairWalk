@@ -36,7 +36,7 @@ public class UpTracker : MonoBehaviour
     public bool isRightFootUp = false;// 右足が上方向に移動しているかどうかを示すフラグ
 
      // しきい値（ノイズ除去用）
-    private float upwardThreshold = 0.01f; // この値以上の高さ変化があれば移動とみなす
+    private float upwardThreshold = 0.005f; // この値以上の高さ変化があれば移動とみなす
     public bool canTriggerLeft = true;          // 左足のトリガー許可
     public bool canTriggerRight = true;         // 右足のトリガー許可
     private bool isInitialHeightSet = false;     //トラッカーの初期高さ設定をしたかどうか
