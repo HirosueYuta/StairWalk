@@ -1,27 +1,31 @@
 using UnityEngine;
-public class Up2Alternating : MonoBehaviour
+using Valve.VR; // SteamVR関連クラスを使用
+
+public class DownController : MonoBehaviour
 {
     public Transform rightShoe;          // 右靴のTransform
     public Transform leftShoe;           // 左靴のTransform
     public Transform headTransform;      // HMD（頭部）のTransform
     public Transform headCamera;         //HMDの位置
 
-    public float stepHeight = 0.18f;     // ステップの高さ
-    public float stepDepth = 0.29f;      // ステップの奥行き
+    private float stepHeight = 0.17995f;     // ステップの高さ
+    private float stepDepth = 0.29f;      // ステップの奥行き
     public float stepDuration = 0.8f;    // ステップの継続時間
-    public float curveStrength = 1.0f;   // ステップの曲線強度
-    public float transitionStiffnessShoe = 10.0f; // 靴移動の滑らかさ
+    private float curveStrength = 1.0f;   // ステップの曲線強度
+    private float transitionStiffnessShoe = 10.0f; // 靴移動の滑らかさ
 
-    public float transitionStiffnessHeadY = 12f;  // 頭部Y軸リマッピングの滑らかさ
-    public float transitionStiffnessHeadZ = 12f;  // 頭部Z軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadY = 12f;  // 頭部Y軸リマッピングの滑らかさ
+    private float transitionStiffnessHeadZ = 12f;  // 頭部Z軸リマッピングの滑らかさ
     private float currentHeadHeight;             // 現在の頭部高さ
     private float currentZPosition;              // 現在の頭部Z位置
 
-    private bool grapgripLeftHand;
-    private bool grapgripRightHand;
-
+    private SteamVR_Action_Boolean GrabG = SteamVR_Actions.default_GrabGrip; // GrabGripボタンのアクション
+    private SteamVR_Action_Boolean Iui = SteamVR_Actions.default_InteractUI;
+    public bool grapgripLeftHand;
+    public bool grapgripRightHand;
     private bool isStepping = false;    // ステップ中かどうか
-    public bool isRightFootNext = true;
+
+    private bool isRightFootNext = true;
     public bool isRightShoeTurn = false;
     public bool isLeftShoeTurn = false;
     private bool isFirstStep = true;
@@ -47,9 +51,9 @@ public class Up2Alternating : MonoBehaviour
         currentHeadHeight = headTransform.position.y;
         currentZPosition = headTransform.position.z;
 
-        isLeftShoeTurn = false;
-        isRightShoeTurn = false;
         isRightFootNext = true;
+        isRightShoeTurn = false;
+        isLeftShoeTurn = false;
     }
 
     void Update()
@@ -58,15 +62,28 @@ public class Up2Alternating : MonoBehaviour
         if (!isInitialHeadPositiontSet){
             SetInitialHeadPosition();
         }
+        // SteamVRコントローラーの入力を取得
+        // grapgripLeftHand = GrabG.GetStateDown(SteamVR_Input_Sources.LeftHand);
+        // grapgripRightHand = GrabG.GetStateDown(SteamVR_Input_Sources.RightHand);
 
-        // キーボード入力を取得
-        grapgripLeftHand = Input.GetKeyDown(KeyCode.A);
-        grapgripRightHand = Input.GetKeyDown(KeyCode.D);
+        grapgripLeftHand = Iui.GetStateDown(SteamVR_Input_Sources.LeftHand);
+        grapgripRightHand = Iui.GetStateDown(SteamVR_Input_Sources.RightHand);
 
-        //バッファ入力がないとき
-        if (!isStepping)
+        // ステップ中の入力をバッファに保存
+        if (isStepping)
         {
-            // 通常の入力を処理
+            if (grapgripRightHand && !isRightFootNext)
+            {
+                bufferedRightInput = true;
+            }
+            else if (grapgripLeftHand && isRightFootNext)
+            {
+                bufferedLeftInput = true;
+            }
+        }
+        else
+        {
+            // バッファが空なら通常の入力を処理
             if (grapgripRightHand && isRightFootNext)
             {
                 isRightShoeTurn = true;
@@ -80,18 +97,6 @@ public class Up2Alternating : MonoBehaviour
                 StartHeadRemap();
             }
         }
-        // ステップ中の入力をバッファに保存
-        else
-        {
-            if (grapgripRightHand && !isRightFootNext)
-            {
-                bufferedRightInput = true;
-            }
-            else if (grapgripLeftHand && isRightFootNext)
-            {
-                bufferedLeftInput = true;
-            }
-        }
 
         // ステップ処理
         if (isStepping)
@@ -103,7 +108,7 @@ public class Up2Alternating : MonoBehaviour
         if (isRemapping)
         {
             RemapHeadHeight();
-        }
+        }      
     }
 
     void SetInitialHeadPosition(){
@@ -117,7 +122,7 @@ public class Up2Alternating : MonoBehaviour
         isInitialHeadPositiontSet = true; // 初期高さの取得を完了
         }
     }
-
+    
     void StartStep()
     {
         isStepping = true;
@@ -129,12 +134,12 @@ public class Up2Alternating : MonoBehaviour
         if (isRightShoeTurn)
         {
             startPosition = rightShoe.position;
-            targetPosition = rightShoe.position + new Vector3(0,-stepHeight * heightMultiplier,-stepDepth * depthMultiplier);
+            targetPosition = rightShoe.position + new Vector3(0, -stepHeight * heightMultiplier, -stepDepth * depthMultiplier);
         }
         else if (isLeftShoeTurn)
         {
             startPosition = leftShoe.position;
-            targetPosition = leftShoe.position + new Vector3(0,-stepHeight * heightMultiplier,-stepDepth * depthMultiplier);
+            targetPosition = leftShoe.position + new Vector3(0, -stepHeight * heightMultiplier, -stepDepth * depthMultiplier);
         }
     }
 
@@ -144,7 +149,7 @@ public class Up2Alternating : MonoBehaviour
         progress = Mathf.Clamp01(progress);
 
         float sigmoidProgress = 1 / (1 + Mathf.Exp(-transitionStiffnessShoe * (progress - 0.5f)));
-        Vector3 currentPosition= Vector3.Lerp(startPosition, targetPosition, sigmoidProgress);
+        Vector3 currentPosition = Vector3.Lerp(startPosition, targetPosition, sigmoidProgress);
         currentPosition.y += Mathf.Sin(sigmoidProgress * Mathf.PI) * stepHeight * curveStrength;
 
         if (isRightShoeTurn)
@@ -165,10 +170,12 @@ public class Up2Alternating : MonoBehaviour
             if (isRightShoeTurn)
             {
                 isRightShoeTurn = false;
+                //Debug.Log("右足のステップが完了しました");
             }
             else if (isLeftShoeTurn)
             {
                 isLeftShoeTurn = false;
+                //Debug.Log("左足のステップが完了しました");
             }
 
             isFirstStep = false;

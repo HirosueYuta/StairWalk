@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class UpEMG_pulse : MonoBehaviour
+public class DownEMG_pulse : MonoBehaviour
 {
     public Transform rightShoe;  
     public Transform leftShoe;   
@@ -49,7 +49,7 @@ public class UpEMG_pulse : MonoBehaviour
     // 頭部リマッピング管理
     private float t0;  
     private bool isRemapping = false; 
-    private float omega =1f;  
+    private float omega =-1f;  
 
     // 入力バッファ
     private bool bufferedLeftInput = false;
@@ -132,7 +132,7 @@ public class UpEMG_pulse : MonoBehaviour
         initialHeadPositionZ = headCamera.position.z; 
 
         if (!isInitialHeadPositiontSet && ( initialHeadPositionX != 0 || initialHeadPositionZ != 0)){
-            headTransform.position = new Vector3(headTransform .position.x - headCamera.position.x, headTransform.position.y, headTransform.position.z-headCamera.position.z);
+            headTransform.position = new Vector3(headTransform .position.x - headCamera.position.x, headTransform.position.y, headTransform.position.z-headCamera.position.z+58);
             Debug.Log(initialHeadPositionX+","+initialHeadPositionZ);
             isInitialHeadPositiontSet = true; // 初期高さの取得を完了
             }
