@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.stairwalk_emg.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "C:\\Users\\Hirosue Yuta\\OneDrive - 学校法人立命館\\デスクトップ\\ドキュメント\\HirosueYuta\\実験環境\\Git\\StairWalk\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "C:\\Users\\hirosue yuta\\Documents\\環境\\StairWalk\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "StairWalk_EMG [Testing]"
