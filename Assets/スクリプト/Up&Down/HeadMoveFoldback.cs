@@ -15,30 +15,47 @@ public class HeadMoveFoldback : MonoBehaviour
     private float transitionStiffnessHeadY = 12f;
     private float transitionStiffnessHeadZ = 12f;
 
-    bool  isFolded     = false;   // ← 進行方向フラグ
-    private bool isRemapping = false;
+    public bool  isFolded     = false;   // ← 進行方向フラグ
+    [SerializeField] public bool isRemapping = false;  // ステップ補間中フラグ
     private float t0;
     private float currentHeadHeight;
     private float currentZPosition;
     public float omega = 1f;
 
+    // ここで「他のクラスから讀める」プロパティを追加
+    public bool IsRemapping
+    {
+        get { return isRemapping; }
+    }
+
+    public bool IsFolded
+    {
+        get { return isFolded; }
+        set { isFolded = value; }
+    }
+
+
+
+
     void OnEnable()
     {
         InputListener.OnStepInput += HandleStepInput;
-        ZoneDetector.OnZoneEntered   += OnZoneDetected;
+        //ZoneDetector.OnZoneEntered   += OnZoneDetected;
     }
 
     void OnDisable()
     {
         InputListener.OnStepInput -= HandleStepInput;
-        ZoneDetector.OnZoneEntered   -= OnZoneDetected;
+        //ZoneDetector.OnZoneEntered   -= OnZoneDetected;
     }
 
-    void OnZoneDetected(int count)
-    {
-        // 進行方向フラグを反転
-        isFolded = !isFolded;
-    }
+    // // ZoneDetector からの衝突検知を受け取るメソッド
+    // void OnZoneDetected(int count)
+    // {
+    //     // 進行方向を反転
+    //     isFolded = !isFolded;
+        
+    // }
 
     void HandleStepInput(bool isRightFoot)
     {

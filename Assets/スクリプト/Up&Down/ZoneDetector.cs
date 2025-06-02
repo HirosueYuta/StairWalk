@@ -8,7 +8,8 @@ public class ZoneDetector : MonoBehaviour
     // ① イベントの定義（引数は「何回目の検知か」を int で渡す）
     public static event Action<int> OnZoneEntered;
 
-    int detectCount = 0;
+    // ① static に変更：クラスで共通のカウンタ
+    private static int detectCount = 0;
 
     void OnTriggerEnter(Collider other)
     {
@@ -21,4 +22,6 @@ public class ZoneDetector : MonoBehaviour
             OnZoneEntered?.Invoke(detectCount);
         }
     }
+
+
 }
